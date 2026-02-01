@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FTTX – Modo Rápido</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #020617, #0f172a);
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #020617;
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 0 25px rgba(0,0,0,.6);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 16px;
+      font-size: 1.4rem;
+    }
+
+    label {
+      font-size: .9rem;
+      margin-top: 12px;
+      display: block;
+      opacity: .85;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      margin-top: 6px;
+      font-size: 1rem;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+    }
+
+    .result {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .bom { background: #16a34a; }
+    .medio { background: #f59e0b; }
+    .ruim { background: #dc2626; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>FTTX – Modo Rápido</h1>
+
+  <label>Potência da fibra que chega (dBm)</label>
+  <input type="number" id="potencia" step="1" placeholder="-18">
+
+  <label>Tipo de rede</label>
+  <select id="tipo">
+    <option value="balanceado">Balanceado</option>
+    <option value="desbalanceado">Desbalanceado</option>
+  </select>
+
+  <div id="desbalanceadoBox" class="hidden">
+    <label>Splitter desbalanceado</label>
+    <select id="splitDes">
+      <option value="2">2 / 98</option>
+      <option value="3">3 / 97</option>
+      <option value="5">5 / 95</option>
+      <option value="10">10 / 90</option>
+      <option value="15">15 / 85</option>
+      <option value="20">20 / 80</option>
+      <option value="30">30 / 70</option>
+    </select>
+  </div>
+
+  <label>Splitter da caixa</label>
+  <select id="splitCaixa">
+    <option value="4">1 : 4</option>
+    <option value="8">1 : 8</option>
+    <option value="16">1 : 16</option>
+    <option value="32">1 : 32</option>
+  </select>
+
+  <div class="btn-group">
+    <button onclick="calcular()">Calcular potência</button>
+  </div>
+
+  <div id="resultado" class="result hidden"></div>
+</div>
+
+<script>
+  const tipo = document.getElementById("tipo");
+  const boxDes = document.getElementById("desbalanceadoBox");
+
+  tipo.addEventListener("change", () => {
+    boxDes.classList.toggle("hidden", tipo.value !== "desbalanceado");
+  });
+
+  function perdaSplitter(n) {
+    return 10 * Math.log10(n);
+  }
+
+  function calcular() {
+    const p = parseInt(document.getElementById("potencia").value);
+    if (isNaN(p)) return;
+
+    let potenciaFinal = p;
+
+    if (tipo.value === "desbalanceado") {
+      const perc = parseInt(document.getElementById("splitDes").value);
+      potenciaFinal -= 10 * Math.log10(100 / perc);
+    }
+
+    const split = parseInt(document.getElementById("splitCaixa").value);
+    potenciaFinal -= perdaSplitter(split);
+
+    const res = document.getElementById("resultado");
+    res.classList.remove("hidden", "bom", "medio", "ruim");
+
+    if (potenciaFinal >= -8 && potenciaFinal <= -28) {
+      res.classList.add("bom");
+      res.innerText = `Potência na caixa: ${potenciaFinal.toFixed(1)} dBm\nStatus: BOM`;
+    } else if (potenciaFinal > -28 && potenciaFinal <= -32) {
+      res.classList.add("medio");
+      res.innerText = `Potência na caixa: ${potenciaFinal.toFixed(1)} dBm\nStatus: LIMITE`;
+    } else {
+      res.classList.add("ruim");
+      res.innerText = `Potência na caixa: ${potenciaFinal.toFixed(1)} dBm\nStatus: RUIM`;
+    }
+  }
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+  }
+</script>
+
+</body>
+</html>
