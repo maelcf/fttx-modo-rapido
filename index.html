@@ -207,13 +207,19 @@ function calcular() {
   let status = "";
   let classe = "";
 
-  if (potenciaFinal <= -8 && potenciaFinal >= -28) {
+  if (potenciaFinal <= -8 && potenciaFinal > -20) {
     status = "🟢 BOM";
     classe = "bom";
-  } else if (potenciaFinal < -28 && potenciaFinal >= -32) {
+  } 
+  else if (potenciaFinal <= -20 && potenciaFinal > -23) {
     status = "🟡 ALERTA";
     classe = "alerta";
-  } else {
+  }
+  else if (potenciaFinal <= -23 && potenciaFinal >= -28) {
+    status = "🟠 CRÍTICO";
+    classe = "alerta";
+  }
+  else {
     status = "🔴 FORA DO PADRÃO";
     classe = "ruim";
   }
@@ -235,3 +241,4 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
