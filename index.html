@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FTTX – Modo Rápido</title>
+<meta charset="UTF-8">
+<title>Calculadora FTTX – Potência na Caixa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+<!-- 🔹 ADIÇÃO OBRIGATÓRIA PARA PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
 
-  <style>
-    body {
+<style>
+body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
   background: linear-gradient(135deg, #0f172a, #020617);
@@ -124,104 +125,113 @@ button:hover {
   background: #dc2626;
   color: #450a0a;
 }
-  </style>
+</style>
 </head>
+
 <body>
 
 <div class="card">
-  <h1>FTTX – Modo Rápido</h1>
+  <h1>📡 Potência FTTX – Caixa</h1>
 
   <div class="input-group">
     <label>Potência que chega na fibra (dBm – inteiro)</label>
     <input type="number" id="entrada" placeholder="Ex: 18">
     <div class="toggle">
-      <button id="btnNeg" class="active" onclick="setSign(-1)">− Negativo</button>
-      <button id="btnPos" onclick="setSign(1)">+ Positivo</button>
+      <button id="btnNeg" onclick="setSign(-1)">− Negativo</button>
+      <button id="btnPos" class="active" onclick="setSign(1)">+ Positivo</button>
     </div>
   </div>
 
-  <label>Tipo de rede</label>
-  <select id="tipo">
-    <option value="balanceado">Balanceado</option>
-    <option value="desbalanceado">Desbalanceado</option>
-  </select>
-
-  <div id="desbalanceadoBox" class="hidden">
+  <div class="input-group">
     <label>Splitter desbalanceado</label>
-    <select id="splitDes">
-      <option value="2">2 / 98</option>
-      <option value="3">3 / 97</option>
-      <option value="5">5 / 95</option>
-      <option value="10">10 / 90</option>
-      <option value="15">15 / 85</option>
-      <option value="20">20 / 80</option>
-      <option value="30">30 / 70</option>
+    <select id="desbalanceado">
+      <option value="0.01">1 / 99</option>
+      <option value="0.02">2 / 98</option>
+      <option value="0.05">5 / 95</option>
+      <option value="0.10">10 / 90</option>
+      <option value="0.15">15 / 85</option>
+      <option value="0.20">20 / 80</option>
+      <option value="0.25">25 / 75</option>
+      <option value="0.30">30 / 70</option>
+      <option value="0.35">35 / 65</option>
+      <option value="0.40">40 / 60</option>
+      <option value="0.45">45 / 55</option>
     </select>
   </div>
 
-  <label>Splitter da caixa</label>
-  <select id="splitCaixa">
-    <option value="4">1 : 4</option>
-    <option value="8">1 : 8</option>
-    <option value="16">1 : 16</option>
-    <option value="32">1 : 32</option>
-  </select>
-
-  <div class="btn-group">
-    <button onclick="calcular()">Calcular potência</button>
+  <div class="input-group">
+    <label>Splitter na caixa</label>
+    <select id="splitCaixa">
+      <option value="3.5">1:2 – 3.5 dB</option>
+      <option value="7.2">1:4 – 7.2 dB</option>
+      <option value="10.5">1:8 – 10.5 dB</option>
+      <option value="13.8">1:16 – 13.8 dB</option>
+      <option value="17.0">1:32 – 17.0 dB</option>
+      <option value="20.5">1:64 – 20.5 dB</option>
+    </select>
   </div>
 
-  <div id="resultado" class="result hidden"></div>
+  <button onclick="calcular()">Calcular</button>
+
+  <div class="resultado" id="resultado">
+    <div>Potência final na caixa</div>
+    <span>— dBm</span>
+  </div>
 </div>
 
 <script>
-  const tipo = document.getElementById("tipo");
-  const boxDes = document.getElementById("desbalanceadoBox");
+let sign = 1;
 
-  tipo.addEventListener("change", () => {
-    boxDes.classList.toggle("hidden", tipo.value !== "desbalanceado");
-  });
+function setSign(valor) {
+  sign = valor;
+  document.getElementById("btnNeg").classList.remove("active");
+  document.getElementById("btnPos").classList.remove("active");
+  if (valor === -1) document.getElementById("btnNeg").classList.add("active");
+  else document.getElementById("btnPos").classList.add("active");
+}
 
-  function perdaSplitter(n) {
-    return 10 * Math.log10(n);
+function calcular() {
+  const valor = parseInt(document.getElementById("entrada").value);
+  if (isNaN(valor)) {
+    alert("Informe a potência.");
+    return;
   }
 
-  function calcular() {
-    const p = parseInt(document.getElementById("potencia").value);
-    if (isNaN(p)) return;
+  const entrada = valor * sign;
+  const percentual = parseFloat(document.getElementById("desbalanceado").value);
+  const perdaCaixa = parseFloat(document.getElementById("splitCaixa").value);
 
-    let potenciaFinal = p;
+  const perdaDesbalanceado = -10 * Math.log10(percentual);
+  const potenciaFinal = entrada - perdaDesbalanceado - perdaCaixa;
 
-    if (tipo.value === "desbalanceado") {
-      const perc = parseInt(document.getElementById("splitDes").value);
-      potenciaFinal -= 10 * Math.log10(100 / perc);
-    }
+  let status = "";
+  let classe = "";
 
-    const split = parseInt(document.getElementById("splitCaixa").value);
-    potenciaFinal -= perdaSplitter(split);
-
-    const res = document.getElementById("resultado");
-    res.classList.remove("hidden", "bom", "medio", "ruim");
-
-    if (potenciaFinal >= -8 && potenciaFinal <= -28) {
-      res.classList.add("bom");
-      res.innerText = `Potência na caixa: ${potenciaFinal.toFixed(1)} dBm\nStatus: BOM`;
-    } else if (potenciaFinal > -28 && potenciaFinal <= -32) {
-      res.classList.add("medio");
-      res.innerText = `Potência na caixa: ${potenciaFinal.toFixed(1)} dBm\nStatus: LIMITE`;
-    } else {
-      res.classList.add("ruim");
-      res.innerText = `Potência na caixa: ${potenciaFinal.toFixed(1)} dBm\nStatus: RUIM`;
-    }
+  if (potenciaFinal <= -8 && potenciaFinal >= -28) {
+    status = "🟢 BOM";
+    classe = "bom";
+  } else if (potenciaFinal < -28 && potenciaFinal >= -32) {
+    status = "🟡 ALERTA";
+    classe = "alerta";
+  } else {
+    status = "🔴 FORA DO PADRÃO";
+    classe = "ruim";
   }
+
+  document.getElementById("resultado").innerHTML = `
+    <div>Potência final na caixa</div>
+    <span>${potenciaFinal.toFixed(2)} dBm</span>
+    <div class="status ${classe}">${status}</div>
+  `;
+}
 </script>
 
+<!-- 🔹 REGISTRO DO SERVICE WORKER (PWA) -->
 <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js");
-  }
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
 </script>
 
 </body>
 </html>
-
